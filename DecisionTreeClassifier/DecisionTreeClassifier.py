@@ -41,16 +41,26 @@ class DecisionTree():
             p = np.mean(y)
             return p * (1 - p)
 
-        n_feat = X.shape[1]
+        
+        # Select Features 
+        if nfeat is not None:
+            n_feat = nfeat
+            feat = np.random.choice(X.shape[1], n_feat, replace=False)
+            X_subset = X[:, feat]
+            n_feat = X_subset.shape[1]
+        else:
+            n_feat = X.shape[1]
+            X_subset = X
+        
         gini = None
         best_gini = gini_index(y)
         best_feature = None
         best_split_value = None
 
         for i in range(n_feat):
-            for split_value in np.unique(X[:, i]):
-                left = y[X[:, i] < split_value]
-                right = y[X[:, i] >= split_value]
+            for split_value in np.unique(X_subset[:, i]):
+                left = y[X_subset[:, i] < split_value]
+                right = y[X_subset[:, i] >= split_value]
                 gini = (len(left) / len(y)) * gini_index(left) + (len(right) / len(y)) * gini_index(right)
                 if gini < best_gini and len(left) >= minleaf and len(right) >= minleaf:
                     best_gini = gini
@@ -63,10 +73,13 @@ class DecisionTree():
         node = Node(feature = best_feature, split_value = best_split_value)
 
         # Split data
-        X_left = X[X[:, best_feature] < best_split_value]
-        y_left = y[X[:, best_feature] < best_split_value]
-        X_right = X[X[:, best_feature] >= best_split_value]
-        y_right = y[X[:, best_feature] >= best_split_value]
+        x_left = X_subset[:, best_feature] < best_split_value
+        x_right = X_subset[:, best_feature] >= best_split_value
+
+        X_left = X[x_left]
+        X_right = X[x_right]
+        y_left = y[x_left]
+        y_right = y[x_right]
 
         # Recursively grow tree
         node.left = self._tree_grow(X_left, y_left, nmin, minleaf, nfeat)
