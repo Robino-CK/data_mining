@@ -70,7 +70,10 @@ class DecisionTree():
         # Create Node
         if best_feature is None:
             return Node(value = y[np.argmax(y)])
-        node = Node(feature = best_feature, split_value = best_split_value)
+        elif nfeat is not None:
+            node = Node(feature = feat[int(best_feature)], split_value = best_split_value)
+        else:
+            node = Node(feature = int(best_feature), split_value = best_split_value)
 
         # Split data
         x_left = X_subset[:, best_feature] < best_split_value
@@ -88,7 +91,11 @@ class DecisionTree():
         return node
 
     def tree_predict(self, X):
-        return self._tree_predict(self.root, X)
+        pred = []
+        for row in X:
+            pred.append(self._tree_predict(self.root, row))
+
+        return np.array(pred).astype(int)
     
     def _tree_predict(self, node, X):
         if node.is_leaf():
@@ -117,8 +124,26 @@ class RandomForest():
     def __init__(self):
         self.trees = []
 
-    def grow_tree_b(self, X, y, nmin, minleaf, nfeat, m):
-        pass
+    def tree_grow_b(self, X, y, nmin, minleaf, nfeat, m):
+        for i in range(m):
+            dt = DecisionTree()
+            dt.tree_grow(X, y, nmin, minleaf, nfeat)
+            self.trees.append(dt)
 
-    def tree_pred_b(self, X, trees):
-        pass
+    def tree_pred_b(self, X, prop=False):
+        pred = []
+        for row in X:
+
+            pred_i = []
+            for tree in self.trees:
+                row = row.reshape(1, -1)
+                pred_i.append(tree.tree_predict(row))
+
+            pred_i = np.array(pred_i).flatten().astype(int)
+
+            if prop:
+                pred.append(np.bincount(pred_i) / len(pred_i))
+            else:
+                pred.append(np.argmax(np.bincount(pred_i)))
+
+        return np.array(pred)
