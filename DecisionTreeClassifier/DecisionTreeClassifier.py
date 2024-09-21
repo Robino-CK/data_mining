@@ -1,6 +1,8 @@
 import numpy as np
 import warnings
-
+import networkx as nx
+from networkx.drawing.nx_pydot import graphviz_layout
+import pydot
 # Need to fix warnings
 warnings.filterwarnings('ignore')
 
@@ -13,7 +15,7 @@ warnings.filterwarnings('ignore')
     
     Takes in 3 parameters:
     feature: int, the feature number of the feature to split on
-    value: int, the feature value to split on
+    value: int, leaf node value of majority class?? # TODO: check this, I think it is always 1, if 1 exists in the leaf, otherwise 0. (bc argmax)
     split_value: int, the split value (in our case Gini Index)
     
 '''
@@ -25,7 +27,7 @@ class Node():
         self.split_value = split_value
         self.left = None
         self.right = None
-
+    
     def is_leaf(self):
         return self.left is None and self.right is None
     
@@ -138,6 +140,36 @@ class DecisionTree():
             return self._tree_predict(node.left, X)
         else:
             return self._tree_predict(node.right, X)
+    
+    def plot_tree(self):
+        
+        G = nx.DiGraph()
+        nodelabels = {}
+        nx.draw(G,  with_labels = True)
+        self._plot_tree(self.root, G, nodelabels)
+        pos = graphviz_layout(G, prog="dot")
+        #nx.draw_networkx_edge_labels(G, pos,labels=nodelabels,edge_labels=edgelabels, with_labels=True)
+        nx.draw(G,pos, labels=nodelabels,with_labels=True)
+        
+    
+    def _plot_tree(self, node:Node, G:nx.DiGraph,nodelabels:dict):
+        if node is None:
+            return
+        
+        #nodelabels[hash(node)] =  " Gini index: " + str(node.split_value)
+        
+        if node.is_leaf():
+            G.add_node(hash(node))
+        else:
+            nodelabels[hash(node)] =  "Splitting feature " + str(node.feature)
+       
+            G.add_node(hash(node))
+
+            G.add_edge(hash(node), hash(node.left))
+            G.add_edge(hash(node), hash(node.right))
+            self._plot_tree(node.left, G, nodelabels)
+            self._plot_tree(node.right, G, nodelabels)
+    
 
     def print_tree(self):
         self._print_tree(self.root, 0)
@@ -146,9 +178,9 @@ class DecisionTree():
         if node is None:
             return
         if node.is_leaf():
-            print(' ' * depth, 'Leaf:', node.value)
+            print(' ' * depth, 'Leaf: ', node.value)
         else:
-            print(' ' * depth, 'Node:', node.feature, node.split_value)
+            print(' ' * depth, 'Node: ', node.feature, node.split_value)
             self._print_tree(node.left, depth + 1)
             self._print_tree(node.right, depth + 1)
 
