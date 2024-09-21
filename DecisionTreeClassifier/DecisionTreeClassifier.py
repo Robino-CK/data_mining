@@ -4,9 +4,22 @@ import warnings
 # Need to fix warnings
 warnings.filterwarnings('ignore')
 
-class Node():
 
-    def __init__(self, feature=None, value=None, split_value=None):
+'''' 
+    Node class returns a node object, to create decision tree:
+    
+    the node class stores the nodes children as attribute, so we can 
+    create a tree structure with iterating over the root.
+    
+    Takes in 3 parameters:
+    feature: int, the feature number of the feature to split on
+    value: int, the feature value to split on
+    split_value: int, the split value (in our case Gini Index)
+    
+'''
+class Node():
+    
+    def __init__(self, feature:int=None, value:int=None, split_value:int=None):
         self.feature = feature
         self.value = value
         self.split_value = split_value
@@ -19,16 +32,37 @@ class Node():
     def __str__(self):
         return f'Node: {self.feature} {self.split_value}'
 
-
+"""
+    The DecisionTree class implementing of a decision tree classifier and uses the Node class to create the tree.
+    
+    The class has 3 (public) methods/functions:
+    
+    tree_grow(
+        X:np.array, - input data to find the best split
+        y:np.array, - target data  
+        nmin:int, - minimum number of samples to split
+        minleaf:int, - minimum number of samples in leaf
+        nfeat:int - number of features to consider
+        )
+    is the method to grow the tree and doesn't return anything.
+    
+    
+    tree_predict(X:np.array) takes input data and returns the predicted values as np.array.
+    
+    print_tree() prints the tree structure. (doesnt take any arguments or return anything) 
+    
+    
+"""
 class DecisionTree():
 
     def __init__(self):
         self.root = None
     
-    def tree_grow(self, X, y, nmin, minleaf, nfeat):
+    """ """
+    def tree_grow(self, X:np.array, y:np.array, nmin:int, minleaf:int, nfeat:int) -> None:
         self.root = self._tree_grow(X, y, nmin, minleaf, nfeat)
 
-    def _tree_grow(self, X, y, nmin, minleaf, nfeat):
+    def _tree_grow(self, X, y, nmin, minleaf, nfeat) -> Node:
         
         # Early Stopping criteria
         if len(y) <= nmin:
@@ -90,14 +124,14 @@ class DecisionTree():
 
         return node
 
-    def tree_predict(self, X):
+    def tree_predict(self, X:np.array) -> np.array:
         pred = []
         for row in X:
             pred.append(self._tree_predict(self.root, row))
 
         return np.array(pred).astype(int)
     
-    def _tree_predict(self, node, X):
+    def _tree_predict(self, node:Node, X:np.array):
         if node.is_leaf():
             return node.value
         if X[node.feature] < node.split_value:
@@ -108,7 +142,7 @@ class DecisionTree():
     def print_tree(self):
         self._print_tree(self.root, 0)
 
-    def _print_tree(self, node, depth):
+    def _print_tree(self, node:Node, depth:int):
         if node is None:
             return
         if node.is_leaf():
@@ -119,18 +153,45 @@ class DecisionTree():
             self._print_tree(node.right, depth + 1)
 
 
+"""
+    The RandomForest class implements of a Random Forest Tree and uses the Decision Tree for implementation.
+    The class has 2 (public) methods/functions:
+    
+    tree_grow_b(
+        X:np.array, - input data to find the best split
+        y:np.array, - target data  
+        nmin:int, - minimum number of samples to split
+        minleaf:int, - minimum number of samples in leaf
+        nfeat:int - number of features to consider,
+        m:int - number of trees to grow
+        )
+    is the method to grow the tree and doesn't return anything.
+    
+    
+    tree_pred_b(
+        X:np.array, - input data 
+        tree_list:list[DecisionTree], - TODO: list of trees to predict 
+        prop:bool=False - TODO: what is it doing?
+    )  returns the predicted values as np.array.
+    
+    
+    
+"""
+
 class RandomForest():
 
     def __init__(self):
         self.trees = []
 
-    def tree_grow_b(self, X, y, nmin, minleaf, nfeat, m):
+    def tree_grow_b(self, X:np.array, y:np.array, nmin:int, minleaf:int, nfeat:int, m:int):
         for i in range(m):
             dt = DecisionTree()
             dt.tree_grow(X, y, nmin, minleaf, nfeat)
             self.trees.append(dt)
 
-    def tree_pred_b(self, X, prop=False):
+
+
+    def tree_pred_b(self, X:np.array, prop:bool=False) -> np.array:
         pred = []
         for row in X:
 
