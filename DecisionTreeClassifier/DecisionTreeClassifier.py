@@ -217,9 +217,15 @@ class RandomForest():
 
     def tree_grow_b(self, X:np.array, y:np.array, nmin:int, minleaf:int, nfeat:int, m:int):
         for i in range(m):
+            replacement = np.random.choice(X.shape[0], X.shape[0], replace=True)
+            x_sample = X[replacement]
+            y_sample = y[replacement]
             dt = DecisionTree()
-            dt.tree_grow(X, y, nmin, minleaf, nfeat)
+            dt.tree_grow(x_sample, y_sample, nmin, minleaf, nfeat)
             self.trees.append(dt)
+        return self.trees
+
+
 
 
 
