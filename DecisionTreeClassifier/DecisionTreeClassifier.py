@@ -160,6 +160,8 @@ class DecisionTree():
         
         if node.is_leaf():
             G.add_node(hash(node))
+            nodelabels[hash(node)] =  "prediction " + str(node.value)
+       
         else:
             nodelabels[hash(node)] =  "Splitting feature " + str(node.feature)
        
