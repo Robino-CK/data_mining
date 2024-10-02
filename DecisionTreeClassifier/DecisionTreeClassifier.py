@@ -15,18 +15,20 @@ warnings.filterwarnings('ignore')
     
     Takes in 3 parameters:
     feature: int, the feature number of the feature to split on
-    value: int, leaf node value of majority class?? # TODO: check this, I think it is always 1, if 1 exists in the leaf, otherwise 0. (bc argmax)
+    value: int, leaf node value of majority class
     split_value: int, the split value (in our case Gini Index)
     
 '''
 class Node():
     
-    def __init__(self, feature:int=None, value:int=None, split_value:int=None):
+    def __init__(self, feature:int=None, value:int=None, split_value:int=None, count_left:int=None, count_right:int=None):
         self.feature = feature
         self.value = value
         self.split_value = split_value
         self.left = None
         self.right = None
+        self.count_left = count_left
+        self.count_right = count_right
     
     def is_leaf(self):
         return self.left is None and self.right is None
@@ -55,6 +57,7 @@ class Node():
     
     
 """
+
 class DecisionTree():
 
     def __init__(self):
@@ -65,12 +68,14 @@ class DecisionTree():
         self.root = self._tree_grow(X, y, nmin, minleaf, nfeat)
 
     def _tree_grow(self, X, y, nmin, minleaf, nfeat) -> Node:
-        
+        count_left = len(y[y == 0])
+        count_right = len(y[y == 1])
+        value = 0 if count_left > count_right else 1
         # Early Stopping criteria
-        if len(y) <= nmin:
-            return Node(value = y[np.argmax(y)])
-        if len(np.unique(y)) == 1 or len(y) == 0:
-            return Node(value = y[0])
+        if len(y) <= nmin: #y[np.argmax(np.bincount(y.astype(int)))] - this took way too long and was not really understandable
+            return Node(value = value, count_left = count_left, count_right = count_right)
+        if len(np.unique(y)) == 1 or len(y) == 0: ## TODO:: here was y[0], why?
+            return Node(value = value, count_left = count_left, count_right = count_right)
         
         # Find best split
         def gini_index(y):
@@ -103,13 +108,6 @@ class DecisionTree():
                     best_feature = i
                     best_split_value = split_value
 
-        # Create Node
-        if best_feature is None:
-            return Node(value = y[np.argmax(y)])
-        elif nfeat is not None:
-            node = Node(feature = feat[int(best_feature)], split_value = best_split_value)
-        else:
-            node = Node(feature = int(best_feature), split_value = best_split_value)
 
         # Split data
         x_left = X_subset[:, best_feature] < best_split_value
@@ -119,6 +117,13 @@ class DecisionTree():
         X_right = X[x_right]
         y_left = y[x_left]
         y_right = y[x_right]
+        # Create Node
+        if best_feature is None:
+            return Node(value =value, count_left = count_left, count_right = count_right)
+        elif nfeat is not None:
+            node = Node(feature = feat[int(best_feature)], split_value = best_split_value, count_left = count_left, count_right = count_right)
+        else:
+            node = Node(feature = int(best_feature), split_value = best_split_value, count_left = count_left, count_right = count_right)
 
         # Recursively grow tree
         node.left = self._tree_grow(X_left, y_left, nmin, minleaf, nfeat)
@@ -141,18 +146,17 @@ class DecisionTree():
         else:
             return self._tree_predict(node.right, X)
     
-    def plot_tree(self):
-        
+    def plot_tree(self, max_depth:int=None, feature_names:dict=None):
         G = nx.DiGraph()
         nodelabels = {}
         nx.draw(G,  with_labels = True)
-        self._plot_tree(self.root, G, nodelabels)
+        self._plot_tree(self.root, G, nodelabels, max_depth,0, feature_names)
         pos = graphviz_layout(G, prog="dot")
         #nx.draw_networkx_edge_labels(G, pos,labels=nodelabels,edge_labels=edgelabels, with_labels=True)
-        nx.draw(G,pos, labels=nodelabels,with_labels=True)
+        nx.draw(G,pos, labels=nodelabels,with_labels=True, node_shape="s", node_size=10000, font_size=15)
         
     
-    def _plot_tree(self, node:Node, G:nx.DiGraph,nodelabels:dict):
+    def _plot_tree(self, node:Node, G:nx.DiGraph,nodelabels:dict, max_depth:int=None, current_depth:int=0, feature_names:None=dict): 
         if node is None:
             return
         
@@ -160,17 +164,31 @@ class DecisionTree():
         
         if node.is_leaf():
             G.add_node(hash(node))
-            nodelabels[hash(node)] =  "prediction " + str(node.value)
-       
-        else:
-            nodelabels[hash(node)] =  "Splitting feature " + str(node.feature)
-       
-            G.add_node(hash(node))
+            nodelabels[hash(node)] =  "Prediction:\n" + str(node.value) + "\n"
+            nodelabels[hash(node)] +=  "Left: " + str(node.count_left) + "\nRight: "+  str(node.count_right)
 
+            
+        else:
+            if feature_names:
+                nodelabels[hash(node)] =  "Feature:\n" + feature_names[node.feature] + "\n"
+                
+            else: 
+                nodelabels[hash(node)] =  "Feature:\n" + str(node.feature) + "\n"
+
+            
+            
+            nodelabels[hash(node)] +=  "Left: " + str(node.count_left) + "\nRight: "+  str(node.count_right)
+            
+            G.add_node(hash(node))
+            
+            if max_depth is not None:
+                if max_depth == current_depth:
+                    return
             G.add_edge(hash(node), hash(node.left))
             G.add_edge(hash(node), hash(node.right))
-            self._plot_tree(node.left, G, nodelabels)
-            self._plot_tree(node.right, G, nodelabels)
+            
+            self._plot_tree(node.left, G, nodelabels, max_depth, current_depth + 1, feature_names)
+            self._plot_tree(node.right, G, nodelabels, max_depth, current_depth + 1, feature_names)
     
 
     def print_tree(self):
@@ -225,8 +243,7 @@ class RandomForest():
             dt = DecisionTree()
             dt.tree_grow(x_sample, y_sample, nmin, minleaf, nfeat)
             self.trees.append(dt)
-        return self.trees
-
+     
 
 
 
