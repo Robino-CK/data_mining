@@ -1,8 +1,23 @@
+'''
+    Contributors:    
+        Patrick Junghenn (1140761) 
+        Ellora Keemink (6529771)
+        Robin Kollmann (0994359) 
+'''
+
+
+
+
 import numpy as np
 import warnings
-import networkx as nx
-from networkx.drawing.nx_pydot import graphviz_layout
-import pydot
+is_plotting = False
+
+if is_plotting:
+    import networkx as nx
+    from networkx.drawing.nx_pydot import graphviz_layout
+    import pydot
+
+
 # Need to fix warnings
 warnings.filterwarnings('ignore')
 
@@ -17,6 +32,9 @@ warnings.filterwarnings('ignore')
     feature: int, the feature number of the feature to split on
     value: int, leaf node value of majority class
     split_value: int, the split value (in our case Gini Index)
+    count_left: int, the number of samples in the left node
+    count_right: int, the number of samples in the right node
+    
     
 '''
 class Node():
@@ -36,10 +54,12 @@ class Node():
     def __str__(self):
         return f'Node: {self.feature} {self.split_value}'
 
+
+
 """
     The DecisionTree class implementing of a decision tree classifier and uses the Node class to create the tree.
     
-    The class has 3 (public) methods/functions:
+    The class has 5 (public) methods/functions:
     
     tree_grow(
         X:np.array, - input data to find the best split
@@ -50,6 +70,9 @@ class Node():
         )
     is the method to grow the tree and doesn't return anything.
     
+    depth() returns the depth of the tree.
+    
+    number_nodes() returns the number of nodes in the tree.
     
     tree_predict(X:np.array) takes input data and returns the predicted values as np.array.
     
@@ -190,6 +213,20 @@ class DecisionTree():
             self._plot_tree(node.left, G, nodelabels, max_depth, current_depth + 1, feature_names)
             self._plot_tree(node.right, G, nodelabels, max_depth, current_depth + 1, feature_names)
     
+    
+    def number_nodes(self):
+        return self._number_nodes(self.root)
+    
+    def _number_nodes(self, node:Node):
+        if node is None:
+            return 0
+        return 1 + self._number_nodes(node.left) + self._number_nodes(node.right)
+    
+    def depth(self):
+        return self._depth(self.root)
+    
+    def _depth(self, node:Node):
+        return max(self._depth(node.left), self._depth(node.right)) + 1 if node is not None else 0
 
     def print_tree(self):
         self._print_tree(self.root, 0)
