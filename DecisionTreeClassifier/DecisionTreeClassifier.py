@@ -87,7 +87,7 @@ class DecisionTree():
         # Early Stopping criteria
         if len(y) <= nmin: #y[np.argmax(np.bincount(y.astype(int)))] - this took way too long and was not really understandable
             return Node(value = value, count_left = count_left, count_right = count_right)
-        if len(np.unique(y)) == 1 or len(y) == 0: ## TODO:: here was y[0], why?
+        if len(np.unique(y)) == 1 or len(y) == 0: 
             return Node(value = value, count_left = count_left, count_right = count_right)
         
         # Calculate Gini Index
@@ -255,9 +255,7 @@ class DecisionTree():
     
     
     tree_pred_b(
-        X:np.array, - input data 
-        tree_list:list[DecisionTree], - TODO: list of trees to predict 
-        prop:bool=False - TODO: what is it doing?
+        X:np.array, - input data to predict on
     )  returns the predicted values as np.array.
     
     
@@ -284,7 +282,7 @@ class RandomForest():
 
 
 
-    def tree_pred_b(self, X:np.array, prop:bool=False) -> np.array:
+    def tree_pred_b(self, X:np.array) -> np.array:
         '''Return decision tree predictions'''
         pred = []
         for row in X:
@@ -296,9 +294,6 @@ class RandomForest():
 
             pred_i = np.array(pred_i).flatten().astype(int)
 
-            if prop:
-                pred.append(np.bincount(pred_i) / len(pred_i))
-            else:
-                pred.append(np.argmax(np.bincount(pred_i)))
+            pred.append(np.argmax(np.bincount(pred_i)))
 
         return np.array(pred)
