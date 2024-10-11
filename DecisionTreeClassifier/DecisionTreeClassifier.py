@@ -18,9 +18,6 @@ if is_plotting:
     import pydot
 
 
-# Need to fix warnings
-warnings.filterwarnings('ignore')
-
 
 '''' 
     Node class returns a node object, to create decision tree:
