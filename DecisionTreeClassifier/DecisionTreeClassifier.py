@@ -5,18 +5,11 @@
         Robin Kollmann (0994359) 
 '''
 
-
-
-
 import numpy as np
 import warnings
-is_plotting = False
-
-if is_plotting:
-    import networkx as nx
-    from networkx.drawing.nx_pydot import graphviz_layout
-    import pydot
-
+import networkx as nx
+from networkx.drawing.nx_pydot import graphviz_layout
+import pydot
 
 
 '''' 
@@ -83,8 +76,8 @@ class DecisionTree():
     def __init__(self):
         self.root = None
     
-    """ """
     def tree_grow(self, X:np.array, y:np.array, nmin:int, minleaf:int, nfeat:int) -> None:
+        '''Train Decision Tree'''
         self.root = self._tree_grow(X, y, nmin, minleaf, nfeat)
 
     def _tree_grow(self, X, y, nmin, minleaf, nfeat) -> Node:
@@ -97,7 +90,7 @@ class DecisionTree():
         if len(np.unique(y)) == 1 or len(y) == 0: ## TODO:: here was y[0], why?
             return Node(value = value, count_left = count_left, count_right = count_right)
         
-        # Find best split
+        # Calculate Gini Index
         def gini_index(y):
             p = np.mean(y)
             return p * (1 - p)
@@ -113,11 +106,13 @@ class DecisionTree():
             n_feat = X.shape[1]
             X_subset = X
         
+        # Set initial Gini Index as Gini Index of all data in node
         gini = None
         best_gini = gini_index(y)
         best_feature = None
         best_split_value = None
 
+        # Find best split feature and split value
         for i in range(n_feat):
             for split_value in np.unique(X_subset[:, i]):
                 left = y[X_subset[:, i] < split_value]
@@ -137,6 +132,7 @@ class DecisionTree():
         X_right = X[x_right]
         y_left = y[x_left]
         y_right = y[x_right]
+
         # Create Node
         if best_feature is None:
             return Node(value =value, count_left = count_left, count_right = count_right)
@@ -152,6 +148,8 @@ class DecisionTree():
         return node
 
     def tree_predict(self, X:np.array) -> np.array:
+        '''Return decision tree predictions'''
+
         pred = []
         for row in X:
             pred.append(self._tree_predict(self.root, row))
@@ -167,6 +165,7 @@ class DecisionTree():
             return self._tree_predict(node.right, X)
     
     def plot_tree(self, max_depth:int=None, feature_names:dict=None):
+        '''Create Tree Plot'''
         G = nx.DiGraph()
         nodelabels = {}
         nx.draw(G,  with_labels = True)
@@ -179,8 +178,6 @@ class DecisionTree():
     def _plot_tree(self, node:Node, G:nx.DiGraph,nodelabels:dict, max_depth:int=None, current_depth:int=0, feature_names:None=dict): 
         if node is None:
             return
-        
-        #nodelabels[hash(node)] =  " Gini index: " + str(node.split_value)
         
         if node.is_leaf():
             G.add_node(hash(node))
@@ -212,6 +209,7 @@ class DecisionTree():
     
     
     def number_nodes(self):
+        '''Return total number of nodes in tree'''
         return self._number_nodes(self.root)
     
     def _number_nodes(self, node:Node):
@@ -220,12 +218,14 @@ class DecisionTree():
         return 1 + self._number_nodes(node.left) + self._number_nodes(node.right)
     
     def depth(self):
+        '''Return Max Depth of Tree'''
         return self._depth(self.root)
     
     def _depth(self, node:Node):
         return max(self._depth(node.left), self._depth(node.right)) + 1 if node is not None else 0
 
     def print_tree(self):
+        '''Print Tree Structure'''
         self._print_tree(self.root, 0)
 
     def _print_tree(self, node:Node, depth:int):
@@ -270,6 +270,8 @@ class RandomForest():
         self.trees = []
 
     def tree_grow_b(self, X:np.array, y:np.array, nmin:int, minleaf:int, nfeat:int, m:int):
+        '''Train Random Forest'''
+
         for i in range(m):
             replacement = np.random.choice(X.shape[0], X.shape[0], replace=True)
             x_sample = X[replacement]
@@ -283,6 +285,7 @@ class RandomForest():
 
 
     def tree_pred_b(self, X:np.array, prop:bool=False) -> np.array:
+        '''Return decision tree predictions'''
         pred = []
         for row in X:
 
